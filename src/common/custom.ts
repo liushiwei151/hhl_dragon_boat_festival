@@ -14,7 +14,7 @@ function custom(Vue: any, options: any) {
     bind(el: any, binding: any, vNode: any) {
       let pressTime = ~~binding.arg; //长按时常 毫秒
       if (!pressTime) {
-        pressTime = 500;
+        pressTime = 300;
       } //初始化默认时长
       // 确保提供的表达式是函数
       if (typeof binding.value !== "function") {
