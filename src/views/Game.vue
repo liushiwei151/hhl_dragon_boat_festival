@@ -1,6 +1,24 @@
 <template>
   <div class="game">
+    <!-- 成功和失败的弹框 -->
+    <div class="mask" v-show="popup !== ''">
+      <div class="success" v-show="popup === 'success'"></div>
+      <button class="successButton" v-show="popup === 'success'"></button>
+      <div class="fail" v-show="popup === 'fail'"></div>
+      <button class="failButton" v-show="popup === 'fail'"></button>
+    </div>
     <div class="gameBG"></div>
+    <!-- 分数和时间 -->
+    <div class="gameHead">
+      <div class="headBox">
+        <span class="fontj">剩余时间:</span
+        ><span class="value">{{ timeRemaining }}</span>
+      </div>
+      <div class="headBox">
+        <span class="fontj">数量:</span
+        ><span class="value">{{ ricePuddingNumber }}</span>
+      </div>
+    </div>
     <!-- 粽子 -->
     <ul class="zongziBox" ref="zongzi"></ul>
     <div class="fixedBG">
@@ -41,7 +59,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Inject, Watch } from "vue-property-decorator";
+import { Component, Vue, Inject } from "vue-property-decorator";
 @Component({})
 export default class Game extends Vue {
   @Inject()
@@ -51,16 +69,24 @@ export default class Game extends Vue {
   speed = 0.7;
   //长按时龙舟划桨速度
   longSpeed = 0.3;
-  //粽子下路速度
-  fall = 5000;
+  //粽子的下落速度
+  zongziFall = "5000";
   // 声明图片
   imgName = "gu1";
   imgName1 = "gu1";
   gdName = "gu1";
   setInterObejct: any;
   setInterObejct1: any;
+  //弹出成功还是失败''代表不弹
+  popup = "";
   // 龙舟速度
   longzSpeed = this.speed;
+  //获得粽子的数量
+  ricePuddingNumber = 0;
+  //粽子下路速度
+  fall = "5000";
+  //剩余时间
+  timeRemaining = 30;
   //屏幕宽高
   screenWidth = 0;
   screenHeight = 0;
@@ -71,17 +97,6 @@ export default class Game extends Vue {
   zongziKey = 0;
   //监控粽子的定时器
   setZongzi: Map<number, any> = new Map();
-  //龙舟的x轴
-  // dragonBoatX!:number;
-
-  @Watch("longzhouX")
-  positionWatch(newData: number) {
-    // const x1 = newData + this.screenWidth * 0.091;
-    // const x2 = x1 + 0.11 * this.screenWidth;
-    // const y2 = y1 + this.screenWidth * 0.11;
-    // todo 实时监控龙头的坐标矩形x1左上角
-    console.log(newData);
-  }
 
   get longzhouX(): number {
     return this.longPosition + this.screenWidth * 0.091;
@@ -108,30 +123,78 @@ export default class Game extends Vue {
       this.longzSpeed = this.speed;
     }, 2500);
     setTimeout(() => {
-      this.zongziMove();
-    }, 1000);
+      this.controlzongzi();
+      this.countDown();
+    }, 5000);
   }
 
+  //倒计时
+  countDown() {
+    this.timeRemaining--;
+    if (this.timeRemaining <= 0) {
+      return;
+    }
+    setTimeout(() => {
+      this.countDown();
+    }, 1000);
+  }
+  //控制粽子数量
+  controlzongzi() {
+    if (this.timeRemaining <= 30 && this.timeRemaining > 20) {
+      this.zongziMove();
+      const random = Math.floor(Math.random() * Number(this.zongziFall)) + 1000;
+
+      setTimeout(() => {
+        this.fall = String(random);
+        this.controlzongzi();
+      }, 750);
+    } else if (this.timeRemaining <= 20 && this.timeRemaining > 10) {
+      this.zongziMove();
+      const random =
+        Math.floor(Math.random() * (Number(this.zongziFall) - 1000)) + 1000;
+      setTimeout(() => {
+        this.fall = String(random);
+        this.controlzongzi();
+      }, 500);
+    } else if (this.timeRemaining <= 10 && this.timeRemaining > 0) {
+      this.zongziMove();
+      const random =
+        Math.floor(Math.random() * (Number(this.zongziFall) - 2000)) + 1000;
+
+      setTimeout(() => {
+        this.fall = String(random);
+        this.controlzongzi();
+      }, 250);
+    } else {
+      this.popup = "success";
+      return;
+    }
+  }
+  //创建下落的粽子
   zongziMove() {
     const self = this;
     //等待一段时间后再下落中的时间
     const timer = 500;
     const key = this.zongziKey;
-    let _ul: any = this.$refs.zongzi;
+    const _ul: any = this.$refs.zongzi;
     const x =
       Math.floor(Math.random() * this.screenWidth * 0.63) +
       this.screenWidth * 0.12;
     const li: HTMLLIElement = document.createElement("li");
     li.style.left = x + "px";
+    li.style.transitionDuration = this.fall + "ms";
     this.zongziBox.set(key, li);
     this.zongziKey++;
     _ul.appendChild(li);
     //添加定时器监听粽子坐标
-    let tid = setInterval(function() {
-      let value = window.getComputedStyle(li).getPropertyValue("transform");
-      if (value !== "none") {
-        let y = value.split(",")[5].substr(0, value.split(",")[5].length - 1);
-        if (self.screenHeight * 0.7 <= Number(y)) {
+    const tid = setInterval(function() {
+      const value = window.getComputedStyle(li).getPropertyValue("transform");
+      if (value && value !== "none") {
+        const y = value.split(",")[5].substr(0, value.split(",")[5].length - 1);
+        if (
+          self.screenHeight * 0.7 <= Number(y) &&
+          self.screenHeight * 0.7 + self.screenWidth * 0.13 >= Number(y)
+        ) {
           self.collision(x, key);
         }
       }
@@ -139,7 +202,7 @@ export default class Game extends Vue {
     this.setZongzi.set(key, tid);
     // 延迟一定时间等渲染完后再赋值位移
     setTimeout(() => {
-      let px = this.screenHeight * 0.8 + this.screenWidth * 0.13 + "px";
+      const px = this.screenHeight * 0.8 + this.screenWidth * 0.13 + "px";
       li.style.transform = "translate(0, " + px + ")";
       // li.className = "zongziMove";
     }, timer);
@@ -149,12 +212,21 @@ export default class Game extends Vue {
       clearInterval(this.setZongzi.get(key));
       this.zongziBox.delete(key);
       this.setZongzi.delete(key);
-    }, this.fall + timer);
+    }, Number(this.fall) + timer);
   }
   //碰撞
-  collision(x: number, key: number) {
-    let x2 = x + this.screenWidth * 0.137;
-    console.log(x, x2, key);
+  collision(x1: number, key: number) {
+    const x2 = x1 + this.screenWidth * 0.137;
+    const l1 = this.longzhouX;
+    const l2 = l1 + this.screenWidth * 0.13;
+    if (this.timeRemaining <= 0) {
+      return;
+    }
+    if ((l1 <= x2 && l1 >= x1) || (l2 <= x2 && l2 >= x1)) {
+      (this.zongziBox.get(key) as HTMLLIElement).remove();
+      this.zongziBox.delete(key);
+      this.ricePuddingNumber++;
+    }
   }
   //点击敲鼓
   swichDrum(e: number) {
@@ -165,7 +237,6 @@ export default class Game extends Vue {
         this.imgName = "gu1";
       }
       this.moveLong("left");
-      this.zongziMove();
     } else if (e === 2) {
       if (this.imgName1 === "gu1") {
         this.imgName1 = "gu2";
@@ -241,7 +312,8 @@ export default class Game extends Vue {
     left: 20vw;
     top: -13vw;
     position: absolute;
-    transition: all 5s linear;
+    transition-property: all;
+    transition-timing-function: linear;
   }
 }
 </style>
@@ -302,7 +374,79 @@ export default class Game extends Vue {
   width: 100%;
   height: 100%;
   overflow: hidden;
-
+  .mask {
+    position: fixed;
+    z-index: 40;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .success {
+      background: url(../assets/success.png) no-repeat;
+      background-size: 100% 100%;
+      width: 88.7vw;
+      height: 107.1vw;
+      margin-left: 5vw;
+    }
+    .fail {
+      background: url(../assets/fail.png) no-repeat;
+      background-size: 100% 100%;
+      width: 88.7vw;
+      height: 107.1vw;
+      margin-left: 5vw;
+    }
+    .successButton {
+      border: none;
+      outline: none;
+      background: url(../assets/failButton.png) no-repeat;
+      background-size: 100% 100%;
+      width: 61.6vw;
+      height: 18.4vw;
+      margin-top: 3vh;
+    }
+    .successButton {
+      border: none;
+      outline: none;
+      background: url(../assets/successButton.png) no-repeat;
+      background-size: 100% 100%;
+      width: 61.6vw;
+      height: 18.4vw;
+      margin-top: 3vh;
+    }
+  }
+  .gameHead {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 30;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 2vh 14vw 0 13vw;
+    .headBox {
+      width: 28vw;
+      white-space: nowrap;
+    }
+    .fontj {
+      background: linear-gradient(
+        0deg,
+        rgba(2, 0, 36, 0.8270658605238971) 0%,
+        rgba(255, 255, 255, 1) 62%
+      );
+      background-clip: text;
+      margin-right: 3vw;
+      color: transparent;
+      font-size: 4vw;
+    }
+    .value {
+      color: rgb(248, 213, 160);
+      font-size: 7vw;
+    }
+  }
   .longzhouBox {
     background: url(../assets/longBg.png) no-repeat;
     background-size: 100% 100%;
