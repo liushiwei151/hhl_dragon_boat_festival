@@ -39,7 +39,7 @@
 
 <script lang="ts">
 import { Component, Vue, Inject } from "vue-property-decorator";
-
+import api from "../api";
 interface RankInfoInter {
   ranking: string;
   infoNumber: string | number;
@@ -77,6 +77,13 @@ export default class Home extends Vue {
         number: "99999"
       });
     }
+  }
+  //获取用户信息接口
+  getUserInfo() {
+    let data;
+    api.userInfo(data).then(res => {
+      console.log(res);
+    });
   }
   // 显示弹框
   showModal(e: string) {
