@@ -2,10 +2,38 @@
   <div class="game">
     <!-- 成功和失败的弹框 -->
     <div class="mask" v-show="popup !== ''">
-      <div class="success" v-show="popup === 'success'"></div>
-      <button class="successButton" v-show="popup === 'success'"></button>
-      <div class="fail" v-show="popup === 'fail'"></div>
-      <button class="failButton" v-show="popup === 'fail'"></button>
+      <div class="success lotter" v-show="popup === 'success'">
+        <p>您已成功接到超过30个粽子</p>
+        <p>获得惊喜奖励</p>
+        <p>{{ lotterise.name }}</p>
+        <div
+          :style="{ backgroundImage: 'url(' + lotterise.imgUrl + ')' }"
+        ></div>
+      </div>
+      <button
+        class="successButton"
+        @click="gameComputed()"
+        v-show="popup === 'success'"
+      ></button>
+      <div class="success" v-show="popup === 'thanks'">
+        <p>您已成功接到超过30个粽子</p>
+        <p>感谢您的参与！</p>
+      </div>
+      <button
+        class="thanksButton"
+        @click="gameComputed()"
+        v-show="popup === 'thanks'"
+      ></button>
+      <div class="fail" v-show="popup === 'fail'">
+        <p>您在30秒游戏时间内,</p>
+        <p>未成功收获30个粽子,</p>
+        <p>再接再厉哦！</p>
+      </div>
+      <button
+        class="failButton"
+        @click="gameComputed()"
+        v-show="popup === 'fail'"
+      ></button>
     </div>
     <div class="gameBG"></div>
     <!-- 分数和时间 -->
@@ -50,16 +78,16 @@
     <transition name="list">
       <div class="longzhouBox" :style="{ left: longPosition + 'px' }">
         <div class="longzhou" :style="{ animationDuration: longzSpeed + 's' }">
-          <div class="longHead"></div>
+          <!-- <div class="longHead"></div> -->
         </div>
       </div>
     </transition>
-    <div class="xian"></div>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue, Inject } from "vue-property-decorator";
+import api from "../api";
 @Component({})
 export default class Game extends Vue {
   @Inject()
@@ -71,6 +99,13 @@ export default class Game extends Vue {
   longSpeed = 0.3;
   //粽子的下落速度
   zongziFall = "5000";
+  //游戏的id
+  gameId!: any;
+  //奖品的名称和图片
+  lotterise = {
+    name: "",
+    imgUrl: ""
+  };
   // 声明图片
   imgName = "gu1";
   imgName1 = "gu1";
@@ -91,7 +126,7 @@ export default class Game extends Vue {
   screenWidth = 0;
   screenHeight = 0;
   //龙舟位置
-  longPosition = 0;
+  longPosition: string | number = "34%";
   //粽子的存储空间和粽子的key值
   zongziBox: Map<number, HTMLLIElement> = new Map();
   zongziKey = 0;
@@ -99,7 +134,7 @@ export default class Game extends Vue {
   setZongzi: Map<number, any> = new Map();
 
   get longzhouX(): number {
-    return this.longPosition + this.screenWidth * 0.091;
+    return Number(this.longPosition) + this.screenWidth * 0.091;
   }
   get imgUrl(): string {
     const a = require("../assets/" + this.imgName + ".png");
@@ -115,6 +150,8 @@ export default class Game extends Vue {
   }
 
   mounted(): void {
+    this.gameId = this.$route.query.id;
+    console.log(this.$route.query.id);
     this.screenWidth = window.innerWidth;
     this.screenHeight = window.innerHeight;
     this.longPosition = this.screenWidth * 0.34;
@@ -127,7 +164,9 @@ export default class Game extends Vue {
       this.countDown();
     }, 5000);
   }
-
+  gameComputed() {
+    this.$router.push("/");
+  }
   //倒计时
   countDown() {
     this.timeRemaining--;
@@ -142,16 +181,17 @@ export default class Game extends Vue {
   controlzongzi() {
     if (this.timeRemaining <= 30 && this.timeRemaining > 20) {
       this.zongziMove();
-      const random = Math.floor(Math.random() * Number(this.zongziFall)) + 1000;
+      const random =
+        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 3000;
 
       setTimeout(() => {
         this.fall = String(random);
         this.controlzongzi();
-      }, 750);
+      }, 500);
     } else if (this.timeRemaining <= 20 && this.timeRemaining > 10) {
       this.zongziMove();
       const random =
-        Math.floor(Math.random() * (Number(this.zongziFall) - 1000)) + 1000;
+        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 2000;
       setTimeout(() => {
         this.fall = String(random);
         this.controlzongzi();
@@ -159,15 +199,47 @@ export default class Game extends Vue {
     } else if (this.timeRemaining <= 10 && this.timeRemaining > 0) {
       this.zongziMove();
       const random =
-        Math.floor(Math.random() * (Number(this.zongziFall) - 2000)) + 1000;
+        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 1000;
 
       setTimeout(() => {
         this.fall = String(random);
         this.controlzongzi();
-      }, 250);
+      }, 500);
     } else {
-      this.popup = "success";
+      this.lotteries();
       return;
+    }
+  }
+  //判断中奖
+  lotteries() {
+    const self = this;
+    if (this.ricePuddingNumber >= 30) {
+      const userInfo = JSON.parse(localStorage.getItem("userInfo") as string);
+      const data = {
+        openid: userInfo.openid,
+        gameRecordVO: {
+          id: self.gameId,
+          score: self.ricePuddingNumber
+        }
+      };
+      api.lotteries(data).then(res => {
+        if (res.data.code === 200) {
+          console.log(res.data.data);
+          if (res.data.data.prizeName === "谢谢惠顾") {
+            self.popup = "thanks";
+          } else {
+            self.lotterise = {
+              name: res.data.data.prizeName,
+              imgUrl: res.data.data.imgUrl
+            };
+            self.popup = "success";
+          }
+        } else {
+          self.isTip(res.data.msg);
+        }
+      });
+    } else {
+      this.popup = "fail";
     }
   }
   //创建下落的粽子
@@ -255,7 +327,7 @@ export default class Game extends Vue {
       } else {
         this.imgName = "gu1";
       }
-      this.moveLong("left");
+      this.moveLong("left", 30);
     }, 100);
     this.longzSpeed = this.longSpeed;
   }
@@ -277,22 +349,26 @@ export default class Game extends Vue {
       } else {
         this.imgName1 = "gu1";
       }
-      this.moveLong("right");
+      this.moveLong("right", 30);
     }, 100);
     this.longzSpeed = this.longSpeed;
   }
   //移动龙舟
-  moveLong(e: string) {
+  moveLong(e: string, f?: number) {
     if (e === "left" && this.longPosition <= 0) {
       return;
     }
     if (e === "right" && this.longPosition >= this.screenWidth * 0.69) {
       return;
     }
+    let num = 20;
+    if (f) {
+      num = f;
+    }
     if (e === "right") {
-      this.longPosition += 20;
+      (this.longPosition as number) += num;
     } else if (e === "left") {
-      this.longPosition -= 20;
+      (this.longPosition as number) -= num;
     }
   }
 }
@@ -307,7 +383,7 @@ export default class Game extends Vue {
   li {
     width: 13.7vw;
     height: 13vw;
-    background: url(..//assets/zongzi.png) no-repeat;
+    background: url(../assets/zongzi.png) no-repeat;
     background-size: 100% 100%;
     left: 20vw;
     top: -13vw;
@@ -389,6 +465,29 @@ export default class Game extends Vue {
       width: 88.7vw;
       height: 107.1vw;
       margin-left: 5vw;
+      box-sizing: border-box;
+      padding-top: 60vw;
+      p {
+        margin: 0;
+        padding: 0;
+        font-size: 4vw;
+        margin-bottom: 4vw;
+        font-weight: 550;
+      }
+    }
+    .lotter {
+      padding-top: 50vw;
+      p {
+        margin-bottom: 2vw;
+        white-space: nowrap;
+      }
+      div {
+        width: 25vw;
+        height: 25vw;
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        margin: 0 auto;
+      }
     }
     .fail {
       background: url(../assets/fail.png) no-repeat;
@@ -396,11 +495,29 @@ export default class Game extends Vue {
       width: 88.7vw;
       height: 107.1vw;
       margin-left: 5vw;
+      padding-top: 55vw;
+      box-sizing: border-box;
+      p {
+        margin: 0;
+        padding: 0;
+        font-size: 4vw;
+        margin-bottom: 4vw;
+        font-weight: 550;
+      }
     }
-    .successButton {
+    .failButton {
       border: none;
       outline: none;
       background: url(../assets/failButton.png) no-repeat;
+      background-size: 100% 100%;
+      width: 61.6vw;
+      height: 18.4vw;
+      margin-top: 3vh;
+    }
+    .thanksButton {
+      border: none;
+      outline: none;
+      background: url(../assets/closeLotter.png) no-repeat;
       background-size: 100% 100%;
       width: 61.6vw;
       height: 18.4vw;

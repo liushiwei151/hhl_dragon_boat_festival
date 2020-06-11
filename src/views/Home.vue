@@ -3,19 +3,28 @@
     <i class="icon" @click="showModal('rank')"></i>
     <button class="button" @click="startGame"></button>
     <button @click="showModal('rule')">规则</button>
-    <button @click="showModal('share')">分享</button>
     <!-- 排行榜 -->
     <transition name="fade">
       <div class="rank" v-show="isRankShow">
         <ul>
           <li v-for="(item, index) in rankInfo" :key="index">
             <dl>
-              <dd>{{ item.ranking }}</dd>
-              <dd>{{ item.infoNumber }}</dd>
+              <dd>{{ item.rank }}</dd>
+              <dd>{{ item.memberNo }}</dd>
               <dd>
-                <span>{{ item.name }}</span>
+                <span>{{ item.nickName }}</span>
               </dd>
-              <dd>{{ item.number }}</dd>
+              <dd>{{ item.score }}</dd>
+            </dl>
+          </li>
+          <li v-for="(a, b) in rankLength" :key="11 + b">
+            <dl>
+              <dd></dd>
+              <dd></dd>
+              <dd>
+                <span></span>
+              </dd>
+              <dd></dd>
             </dl>
           </li>
         </ul>
@@ -41,10 +50,23 @@
 import { Component, Vue, Inject } from "vue-property-decorator";
 import api from "../api";
 interface RankInfoInter {
-  ranking: string;
-  infoNumber: string | number;
-  name: string;
-  number: string | number;
+  rank: string | number;
+  memberNo: string | number;
+  nickName: string;
+  score: string | number;
+}
+interface Data {
+  code: number;
+  msg?: string;
+  data?: any;
+}
+interface Api {
+  data: Data;
+  status: number;
+  statusText: string;
+  headers: object;
+  config: object;
+  request?: object;
 }
 @Component({})
 export default class Home extends Vue {
@@ -58,37 +80,63 @@ export default class Home extends Vue {
   //分享显示
   isShareShow = false;
   //排行榜数据R
-  rankInfo: Array<RankInfoInter> = [
-    {
-      ranking: "排名",
-      infoNumber: "用户编号",
-      name: "昵称",
-      number: "粽子数量"
-    }
-  ];
+  rankInfo: Array<RankInfoInter> = [];
 
-  created(): void {
-    for (let i = 0; i < 10; i++) {
-      const rankNumber = "TOP" + (i + 1);
-      this.rankInfo.push({
-        ranking: rankNumber,
-        infoNumber: "12345678",
-        name: "流逝的光明市区",
-        number: "99999"
-      });
+  get rankLength(): number {
+    if (this.rankInfo.length <= 10) {
+      return 10 - this.rankInfo.length;
+    } else {
+      return 0;
     }
+  }
+  created(): void {
+    this.getUserInfo();
+  }
+  //处理url获取地址的值
+  openid(): string {
+    // const url =location.href;
+    const url =
+      "http://qrhhl.yunyutian.cn/boat/index.html?openid=oXslc0zEvV5RwspCzgWcQMmL-_yA";
+    return url.split("=")[1];
   }
   //获取用户信息接口
   getUserInfo() {
-    let data;
-    api.userInfo(data).then(res => {
-      console.log(res);
+    const self = this;
+    const data = this.openid();
+    self.isTip("wait");
+    api.userInfo(data).then((res: Api) => {
+      if (res.data.code === 200) {
+        self.isTip(false);
+        localStorage.setItem("userInfo", JSON.stringify(res.data.data));
+      } else {
+        self.isTip(res.data.msg);
+      }
+    });
+  }
+  rankingList() {
+    const self = this;
+    self.isTip("wait");
+    (api as any).rankingList().then((res: Api) => {
+      self.isTip(false);
+      if (res.data.code === 200) {
+        const value: any = res.data.data as RankInfoInter;
+        value.unshift({
+          rank: "排名",
+          memberNo: "用户编号",
+          nickName: "昵称",
+          score: "粽子数量"
+        });
+        self.rankInfo = value;
+        self.isRankShow = true;
+      } else {
+        self.isTip(res.data.msg);
+      }
     });
   }
   // 显示弹框
   showModal(e: string) {
     if (e === "rank") {
-      this.isRankShow = true;
+      this.rankingList();
     } else if (e === "rule") {
       this.isRuleShow = true;
     } else if (e === "share") {
@@ -107,7 +155,22 @@ export default class Home extends Vue {
   }
   //开始游戏
   startGame() {
-    this.$router.push("/Game");
+    const self = this;
+    const userInfo = JSON.parse(localStorage.getItem("userInfo") as string);
+    if (userInfo.frequency <= 0) {
+      self.showModal("share");
+      return;
+    }
+    self.isTip("wait");
+    (api as any).playGame(userInfo.openid).then((res: Api) => {
+      self.isTip(false);
+      if (res.data.code === 200) {
+        const gameId = res.data.data;
+        self.$router.push({ path: "/Game", query: { id: gameId } });
+      } else {
+        self.isTip(res.data.msg);
+      }
+    });
   }
 }
 </script>

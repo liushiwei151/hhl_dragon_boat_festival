@@ -11,8 +11,9 @@ axios.defaults.withCredentials = true;
 axios.interceptors.request.use(
   config => {
     //在发送请求之前做某件事
-    if (JSON.parse(localStorage.getItem("userInfo"))) {
-      let token = JSON.parse(localStorage.getItem("userInfo")).user.token;
+    if (JSON.parse(localStorage.getItem("userInfo") as string)) {
+      const token = JSON.parse(localStorage.getItem("userInfo") as string)
+        .token;
       config.headers.token = token;
     }
     return config;
@@ -31,9 +32,38 @@ axios.interceptors.request.use(
 const start =(data)=>{
 	return axios.post('/yq/shout/start',data)
 }*/
-const userInfo = data => {
+const userInfo = (data: string) => {
   return axios.post("/users/" + data);
 };
+//排行榜接口
+const rankingList = () => {
+  return axios.get("/users/board");
+};
+//获取微信sdk权限
+const getJsSign = (data: string) => {
+  return axios.get("/users/getJsSign", {
+    params: {
+      url: data
+    }
+  });
+};
+//分享游戏+1
+const shareGame = (data: string) => {
+  return axios.put("/users/share/" + data);
+};
+//开始游戏
+const playGame = (data: string) => {
+  return axios.put("/users/play/" + data);
+};
+//获取奖品
+const lotteries = (data: any) => {
+  return axios.put("/lotteries/users/" + data.openid, data.gameRecordVO);
+};
 export default {
-  userInfo
+  userInfo,
+  rankingList,
+  getJsSign,
+  shareGame,
+  playGame,
+  lotteries
 };
