@@ -35,7 +35,9 @@
         v-show="popup === 'fail'"
       ></button>
     </div>
-    <div class="gameBG"></div>
+    <div class="gameBG">
+      <div class="gameBox"></div>
+    </div>
     <!-- 分数和时间 -->
     <div class="gameHead">
       <div class="headBox">
@@ -52,8 +54,7 @@
     <div class="fixedBG">
       <div
         class="leftDrum drum"
-        @click="swichDrum(1)"
-        v-longTap="leftLong"
+        @touchstart="druming(0)"
         @touchend="handleTouchEnd"
         :style="{ backgroundImage: 'url(' + gdUrl + ')' }"
       >
@@ -64,8 +65,7 @@
       </div>
       <div
         class="leftDrum drum"
-        @click="swichDrum(2)"
-        v-longTap="rightLong"
+        @touchstart="druming(1)"
         @touchend="handleTouchEnd"
         :style="{ backgroundImage: 'url(' + gdUrl + ')' }"
       >
@@ -77,16 +77,17 @@
     </div>
     <transition name="list">
       <div class="longzhouBox" :style="{ left: longPosition + 'px' }">
-        <div class="longzhou" :style="{ animationDuration: longzSpeed + 's' }">
-          <!-- <div class="longHead"></div> -->
-        </div>
+        <div
+          class="longzhou"
+          :style="{ animationDuration: longzSpeed + 's' }"
+        ></div>
       </div>
     </transition>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Inject } from "vue-property-decorator";
+import { Component, Vue, Inject, Watch } from "vue-property-decorator";
 import api from "../api";
 @Component({})
 export default class Game extends Vue {
@@ -96,7 +97,7 @@ export default class Game extends Vue {
   //龙舟平常滑浆速度
   speed = 0.7;
   //长按时龙舟划桨速度
-  longSpeed = 0.3;
+  longSpeed = 0.4;
   //粽子的下落速度
   zongziFall = "5000";
   //游戏的id
@@ -132,6 +133,13 @@ export default class Game extends Vue {
   zongziKey = 0;
   //监控粽子的定时器
   setZongzi: Map<number, any> = new Map();
+  //存储敲鼓的定时器
+  setDrum: Array<any> = [];
+
+  @Watch("setDrum")
+  WatchDrum(newData: Array<any>) {
+    console.log(newData);
+  }
 
   get longzhouX(): number {
     return Number(this.longPosition) + this.screenWidth * 0.091;
@@ -179,19 +187,19 @@ export default class Game extends Vue {
   }
   //控制粽子数量
   controlzongzi() {
-    if (this.timeRemaining <= 30 && this.timeRemaining > 20) {
+    if (this.timeRemaining > 20) {
       this.zongziMove();
       const random =
-        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 3000;
+        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 2000;
 
       setTimeout(() => {
         this.fall = String(random);
         this.controlzongzi();
-      }, 500);
+      }, 666);
     } else if (this.timeRemaining <= 20 && this.timeRemaining > 10) {
       this.zongziMove();
       const random =
-        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 2000;
+        Math.floor(Math.random() * (Number(this.zongziFall) - 3000)) + 1500;
       setTimeout(() => {
         this.fall = String(random);
         this.controlzongzi();
@@ -300,16 +308,53 @@ export default class Game extends Vue {
       this.ricePuddingNumber++;
     }
   }
+  // 触碰敲鼓0左1右
+  druming(e: number) {
+    if (this.setDrum.length > 1) {
+      this.setDrum.forEach(e => {
+        clearInterval(e);
+      });
+      this.setDrum = [];
+      this.druming(e);
+      return;
+    }
+    if (e === 0) {
+      this.swichDrum(e);
+      const setInte = setInterval(() => {
+        if (this.imgName === "gu1") {
+          this.imgName = "gu2";
+        } else {
+          this.imgName = "gu1";
+        }
+        this.moveLong("left");
+      }, 100);
+      this.setDrum.push(setInte);
+      console.log(this.setDrum);
+    } else if (e === 1) {
+      this.swichDrum(e);
+      const setInte = setInterval(() => {
+        if (this.imgName1 === "gu1") {
+          this.imgName1 = "gu2";
+        } else {
+          this.imgName1 = "gu1";
+        }
+        this.moveLong("right");
+      }, 100);
+      this.setDrum.push(setInte);
+    }
+
+    this.longzSpeed = this.longSpeed;
+  }
   //点击敲鼓
   swichDrum(e: number) {
-    if (e === 1) {
+    if (e === 0) {
       if (this.imgName === "gu1") {
         this.imgName = "gu2";
       } else {
         this.imgName = "gu1";
       }
       this.moveLong("left");
-    } else if (e === 2) {
+    } else if (e === 1) {
       if (this.imgName1 === "gu1") {
         this.imgName1 = "gu2";
       } else {
@@ -333,12 +378,12 @@ export default class Game extends Vue {
   }
   //长按结束敲鼓
   handleTouchEnd() {
-    if (this.setInterObejct) {
-      clearInterval(this.setInterObejct);
-    }
-    if (this.setInterObejct1) {
-      clearInterval(this.setInterObejct1);
-    }
+    console.log(this.setDrum);
+    console.log("结束");
+    this.setDrum.forEach(e => {
+      clearInterval(e);
+    });
+    this.setDrum = [];
     this.longzSpeed = this.speed;
   }
   //长按右点击敲鼓
@@ -361,7 +406,7 @@ export default class Game extends Vue {
     if (e === "right" && this.longPosition >= this.screenWidth * 0.69) {
       return;
     }
-    let num = 20;
+    let num = 30;
     if (f) {
       num = f;
     }
@@ -375,7 +420,7 @@ export default class Game extends Vue {
 </script>
 <style lang="less">
 .zongziBox {
-  position: relative;
+  position: fixed;
   width: 100%;
   height: 100%;
   top: 0;
@@ -390,6 +435,7 @@ export default class Game extends Vue {
     position: absolute;
     transition-property: all;
     transition-timing-function: linear;
+    z-index: 100;
   }
 }
 </style>
@@ -609,15 +655,23 @@ export default class Game extends Vue {
     }
   }
   .gameBG {
-    background: url(../assets/gameBG.png);
-    position: fixed;
+    background-color: rgb(36, 65, 91);
     top: 0;
     left: 0;
     background-size: 100% 50%;
     width: 100%;
     height: 200%;
     z-index: -1;
-    animation: scrollBG 4s linear infinite;
+    .gameBox {
+      background: url(../assets/gameBG.png);
+      top: 0;
+      left: 0;
+      background-size: 100% 50%;
+      width: 100%;
+      height: 200%;
+      z-index: -1;
+      animation: scrollBG 7s linear infinite;
+    }
   }
 }
 </style>

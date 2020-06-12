@@ -12,15 +12,15 @@ module.exports = {
 
   assetsDir: "assets",
   lintOnSave: true,
-  productionSourceMap: true, 
+  productionSourceMap: true,
   devServer: {
-    open: false, 
-    host: "0.0.0.0", 
-    port: 8080 
+    open: false,
+    host: "0.0.0.0",
+    port: 8080
   },
   chainWebpack: config => {
     config.plugin("html").tap(args => {
-      args[0].title = "龙舟争渡";
+      args[0].title = "龙舟争渡·礼从粽来";
       return args;
     });
   }

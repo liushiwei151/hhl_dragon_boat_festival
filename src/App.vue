@@ -84,11 +84,11 @@ export default class App extends Vue {
     const self = this;
     const wx = Vue.prototype.wx;
     const share = {
-      title: "端午title",
-      desc: "端午desc",
+      title: "端午赛龙舟，好礼派送中！",
+      desc: "接粽子就能赢大礼，超丰厚福利！",
       link:
         "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toBoat",
-      imgUrl: "https://pic.cwyyt.cn/upload/img/20200429/1637373737_shareImg.jpg"
+      imgUrl: "https://pic.cwyyt.cn/upload/img/20200612/1623222322_longzhou.jpg"
     };
     api.getJsSign(location.href).then(res => {
       if (res.data.code === 200) {
@@ -162,6 +162,14 @@ export default class App extends Vue {
 }
 </script>
 <style lang="less">
+* {
+  -webkit-touch-callout: none; /*系统默认菜单被禁用*/
+  -webkit-user-select: none; /*webkit浏览器*/
+  -khtml-user-select: none; /*早期浏览器*/
+  -moz-user-select: none; /*火狐*/
+  -ms-user-select: none; /*IE10*/
+  user-select: none;
+}
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -1,48 +1,60 @@
 <template>
-  <div class="home">
-    <i class="icon" @click="showModal('rank')"></i>
-    <button class="button" @click="startGame"></button>
-    <button @click="showModal('rule')">规则</button>
-    <!-- 排行榜 -->
-    <transition name="fade">
-      <div class="rank" v-show="isRankShow">
-        <ul>
-          <li v-for="(item, index) in rankInfo" :key="index">
-            <dl>
-              <dd>{{ item.rank }}</dd>
-              <dd>{{ item.memberNo }}</dd>
-              <dd>
-                <span>{{ item.nickName }}</span>
-              </dd>
-              <dd>{{ item.score }}</dd>
-            </dl>
-          </li>
-          <li v-for="(a, b) in rankLength" :key="11 + b">
-            <dl>
-              <dd></dd>
-              <dd></dd>
-              <dd>
-                <span></span>
-              </dd>
-              <dd></dd>
-            </dl>
-          </li>
-        </ul>
-        <button class="closeButton" @click="closeModal('rank')"></button>
-      </div>
-    </transition>
-    <!-- 规则 -->
-    <transition name="fade">
-      <div class="rule" v-show="isRuleShow">
-        <button class="closeButton" @click="closeModal('rule')"></button>
-      </div>
-    </transition>
-    <!-- 提示次数用完 -->
-    <transition name="fade">
-      <div class="share" v-show="isShareShow" @click="closeModal('share')">
-        <i class="share-img"></i>
-      </div>
-    </transition>
+  <div class="BGbox" :style="{ height: Height + 'px' }">
+    <div class="home">
+      <i class="icon" @click="showModal('rank')"></i>
+      <button class="button" @click="startGame"></button>
+      <button class="actRule" @click="showModal('rule')"></button>
+      <!-- 排行榜 -->
+      <transition name="fade">
+        <div class="rank" v-show="isRankShow">
+          <ul>
+            <li v-for="(item, index) in rankInfo" :key="index">
+              <dl>
+                <dd>{{ item.rank }}</dd>
+                <dd>{{ item.memberNo }}</dd>
+                <dd>
+                  <span>{{ item.nickName }}</span>
+                </dd>
+                <dd>{{ item.score }}</dd>
+              </dl>
+            </li>
+            <li v-for="(a, b) in rankLength" :key="11 + b">
+              <dl>
+                <dd></dd>
+                <dd></dd>
+                <dd>
+                  <span></span>
+                </dd>
+                <dd></dd>
+              </dl>
+            </li>
+            <li>
+              <dl>
+                <dd>{{ meRank.rank }}</dd>
+                <dd>{{ meRank.memberNo }}</dd>
+                <dd>
+                  <span>{{ meRank.nickName }}</span>
+                </dd>
+                <dd>{{ meRank.score }}</dd>
+              </dl>
+            </li>
+          </ul>
+          <button class="closeButton" @click="closeModal('rank')"></button>
+        </div>
+      </transition>
+      <!-- 规则 -->
+      <transition name="fade">
+        <div class="rule" v-show="isRuleShow">
+          <button class="closeButton" @click="closeModal('rule')"></button>
+        </div>
+      </transition>
+      <!-- 提示次数用完 -->
+      <transition name="fade">
+        <div class="share" v-show="isShareShow" @click="closeModal('share')">
+          <i class="share-img"></i>
+        </div>
+      </transition>
+    </div>
   </div>
 </template>
 
@@ -81,10 +93,19 @@ export default class Home extends Vue {
   isShareShow = false;
   //排行榜数据R
   rankInfo: Array<RankInfoInter> = [];
+  //背景的固定高度
+  Height = 0;
+  //自己的排名
+  meRank: RankInfoInter = {
+    rank: "",
+    memberNo: "",
+    nickName: "",
+    score: ""
+  };
 
   get rankLength(): number {
-    if (this.rankInfo.length <= 10) {
-      return 10 - this.rankInfo.length;
+    if (this.rankInfo.length <= 11) {
+      return 11 - this.rankInfo.length;
     } else {
       return 0;
     }
@@ -92,12 +113,23 @@ export default class Home extends Vue {
   created(): void {
     this.getUserInfo();
   }
+  mounted(): void {
+    this.Height = window.innerHeight;
+  }
   //处理url获取地址的值
   openid(): string {
-    // const url =location.href;
+    // const url = location.href;
     const url =
-      "http://qrhhl.yunyutian.cn/boat/index.html?openid=oXslc0zEvV5RwspCzgWcQMmL-_yA";
-    return url.split("=")[1];
+      "http://qrhhl.yunyutian.cn/boat/index.html?openid=oXslc0zEvV5RwspCzgWcQMmL-_yA#/";
+    if (url.split("=")[1].indexOf("&") < 0) {
+      if (url.split("=")[1].indexOf("#") < 0) {
+        return url.split("=")[1];
+      } else {
+        return url.split("=")[1].split("#")[0];
+      }
+    } else {
+      return url.split("=")[1].split("&")[0];
+    }
   }
   //获取用户信息接口
   getUserInfo() {
@@ -108,6 +140,12 @@ export default class Home extends Vue {
       if (res.data.code === 200) {
         self.isTip(false);
         localStorage.setItem("userInfo", JSON.stringify(res.data.data));
+        self.meRank = {
+          rank: res.data.data.rank,
+          memberNo: res.data.data.memberNo,
+          nickName: res.data.data.nickName,
+          score: res.data.data.score
+        };
       } else {
         self.isTip(res.data.msg);
       }
@@ -180,12 +218,34 @@ export default class Home extends Vue {
   font-weight: 600;
   color: rgb(173, 43, 43);
 };
-.home {
+.BGbox {
   position: relative;
   width: 100%;
   height: 100%;
+  background: url(../assets/bigBG.jpg) no-repeat;
+  background-size: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.home {
+  position: relative;
+  width: 100vw;
+  height: 161.066vw;
   background: url(../assets/home_bg.png) no-repeat;
   background-size: 100% 100%;
+  .actRule {
+    border: none;
+    position: absolute;
+    left: 0;
+    top: 10vh;
+    width: 20.5vw;
+    height: 9.3vw;
+    padding: 0;
+    background: url(../assets/actRule.png);
+    background-size: 100% 100%;
+    outline: none;
+  }
   .fade-enter-active,
   .fade-leave-active {
     transition: opacity 0.5s;
@@ -325,7 +385,7 @@ export default class Home extends Vue {
     outline: none;
     width: 60vw;
     height: 20vw;
-    bottom: 10vh;
+    bottom: 5vh;
     left: 20vw;
   }
 }
