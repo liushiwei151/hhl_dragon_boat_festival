@@ -54,6 +54,23 @@
           <i class="share-img"></i>
         </div>
       </transition>
+      <!-- 提示次数用完2-->
+      <transition name="fade">
+        <!-- @click="closeModal('scan')" -->
+        <div class="scan" v-show="isScan">
+          <i class="scan1" v-show="isScan === 'scan1'">
+            <div class="close" @click="closeModal('scan')"></div>
+          </i>
+          <i class="scan2" v-show="isScan === 'scan2'">
+            <div class="close" @click="closeModal('scan')"></div>
+          </i>
+          <button
+            v-show="isScan"
+            class="scanOk"
+            @click="closeModal('scan')"
+          ></button>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -91,6 +108,8 @@ export default class Home extends Vue {
   isRuleShow = false;
   //分享显示
   isShareShow = false;
+  //剩余次数提示显示
+  isScan: boolean | string = false;
   //排行榜数据R
   rankInfo: Array<RankInfoInter> = [];
   //背景的固定高度
@@ -118,9 +137,9 @@ export default class Home extends Vue {
   }
   //处理url获取地址的值
   openid(): string {
-    // const url = location.href;
-    const url =
-      "http://qrhhl.yunyutian.cn/boat/index.html?openid=oXslc0zEvV5RwspCzgWcQMmL-_yA#/";
+    const url = location.href;
+    // const url =
+    // "http://qrhhl.yunyutian.cn/boat/index.html?openid=oXslc0zEvV5RwspCzgWcQMmL-_yA#/";
     if (url.split("=")[1].indexOf("&") < 0) {
       if (url.split("=")[1].indexOf("#") < 0) {
         return url.split("=")[1];
@@ -179,6 +198,10 @@ export default class Home extends Vue {
       this.isRuleShow = true;
     } else if (e === "share") {
       this.isShareShow = true;
+    } else if (e === "scan1") {
+      this.isScan = "scan1";
+    } else if (e === "scan2") {
+      this.isScan = "scan2";
     }
   }
   //关闭弹框
@@ -189,22 +212,26 @@ export default class Home extends Vue {
       this.isRuleShow = false;
     } else if (e === "share") {
       this.isShareShow = false;
+    } else if (e === "scan") {
+      this.isScan = false;
     }
   }
   //开始游戏
   startGame() {
     const self = this;
     const userInfo = JSON.parse(localStorage.getItem("userInfo") as string);
-    if (userInfo.frequency <= 0) {
-      self.showModal("share");
-      return;
-    }
     self.isTip("wait");
     (api as any).playGame(userInfo.openid).then((res: Api) => {
       self.isTip(false);
       if (res.data.code === 200) {
         const gameId = res.data.data;
         self.$router.push({ path: "/Game", query: { id: gameId } });
+      } else if (res.data.code === 1001) {
+        self.showModal("share");
+      } else if (res.data.code === 1002) {
+        self.showModal("scan1");
+      } else if (res.data.code === 1003) {
+        self.showModal("scan2");
       } else {
         self.isTip(res.data.msg);
       }
@@ -217,6 +244,15 @@ export default class Home extends Vue {
   font-size: 4.5vw;
   font-weight: 600;
   color: rgb(173, 43, 43);
+};
+@mask: {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  box-sizing: border-box;
+  top: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.3);
 };
 .BGbox {
   position: relative;
@@ -234,6 +270,48 @@ export default class Home extends Vue {
   height: 161.066vw;
   background: url(../assets/home_bg.png) no-repeat;
   background-size: 100% 100%;
+  .scan {
+    @mask();
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    .scan1 {
+      display: block;
+      background: url(../assets/scan1.png) no-repeat;
+      background-size: 100% 100%;
+      width: 87.3vw;
+      height: 97.47vw;
+      margin-left: 9vw;
+      position: relative;
+    }
+    .close {
+      background: url(../assets/scanClose.png) no-repeat;
+      background-size: 100% 100%;
+      position: absolute;
+      top: 34vw;
+      right: 15vw;
+      width: 9.2vw;
+      height: 9vw;
+    }
+    .scanOk {
+      border: none;
+      background: url(../assets/ok.png) no-repeat;
+      background-size: 100% 100%;
+      width: 61.6vw;
+      height: 18.4vw;
+      margin-top: 5vw;
+    }
+    .scan2 {
+      display: block;
+      background: url(../assets/scan2.png) no-repeat;
+      background-size: 100% 100%;
+      width: 87.3vw;
+      height: 97.47vw;
+      margin-left: 9vw;
+      position: relative;
+    }
+  }
   .actRule {
     border: none;
     position: absolute;
@@ -255,13 +333,7 @@ export default class Home extends Vue {
     opacity: 0;
   }
   .share {
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    box-sizing: border-box;
-    top: 0;
-    left: 0;
-    background-color: rgba(0, 0, 0, 0.3);
+    @mask();
     .share-img {
       background: url(../assets/share.png) no-repeat;
       background-size: 100% 100%;

@@ -9,8 +9,8 @@ enum Direction {
   EAST,
   WEST
 }
-@Component({})
-export default class Home extends Vue {
+@Component
+export default class test extends Vue {
   dir: Direction = Direction.WEST;
   mounted(): void {
     console.log(this.dir);
