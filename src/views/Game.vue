@@ -221,34 +221,33 @@ export default class Game extends Vue {
   //判断中奖
   lotteries() {
     const self = this;
-    if (this.ricePuddingNumber >= 30) {
-      const userInfo = JSON.parse(localStorage.getItem("userInfo") as string);
-      const data = {
-        openid: userInfo.openid,
-        gameRecordVO: {
-          id: self.gameId,
-          score: self.ricePuddingNumber
+    const userInfo = JSON.parse(localStorage.getItem("userInfo") as string);
+    const data = {
+      openid: userInfo.openid,
+      gameRecordVO: {
+        id: self.gameId,
+        score: self.ricePuddingNumber
+      }
+    };
+    api.lotteries(data).then(res => {
+      if (res.data.code === 200) {
+        if (self.ricePuddingNumber < 30) {
+          self.popup = "fail";
+          return;
         }
-      };
-      api.lotteries(data).then(res => {
-        if (res.data.code === 200) {
-          console.log(res.data.data);
-          if (res.data.data.prizeName === "谢谢惠顾") {
-            self.popup = "thanks";
-          } else {
-            self.lotterise = {
-              name: res.data.data.prizeName,
-              imgUrl: res.data.data.imgUrl
-            };
-            self.popup = "success";
-          }
+        if (res.data.data.prizeName === "谢谢惠顾") {
+          self.popup = "thanks";
         } else {
-          self.isTip(res.data.msg);
+          self.lotterise = {
+            name: res.data.data.prizeName,
+            imgUrl: res.data.data.imgUrl
+          };
+          self.popup = "success";
         }
-      });
-    } else {
-      this.popup = "fail";
-    }
+      } else {
+        self.isTip(res.data.msg);
+      }
+    });
   }
   //创建下落的粽子
   zongziMove() {
