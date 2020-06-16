@@ -501,7 +501,7 @@ export default class Game extends Vue {
     z-index: 40;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.75);
     display: flex;
     flex-direction: column;
     align-items: center;

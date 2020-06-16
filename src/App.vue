@@ -86,8 +86,7 @@ export default class App extends Vue {
     const share = {
       title: "端午赛龙舟，好礼派送中！",
       desc: "接粽子就能赢大礼，超丰厚福利！",
-      link:
-        "http://qrhhl.yunyutian.cn/huanghelou1916-center/wx/gCode?name=toBoat",
+      link: "https://wx.hhl1916.com/huanghelou1916-center/wx/gCode?name=toBoat",
       imgUrl: "https://pic.cwyyt.cn/upload/img/20200612/1623222322_longzhou.jpg"
     };
     api.getJsSign(location.href).then(res => {
