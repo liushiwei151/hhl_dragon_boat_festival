@@ -17,7 +17,7 @@
       ></button>
       <div class="success" v-show="popup === 'thanks'">
         <p>您已成功接到超过30个粽子</p>
-        <p>感谢您的参与！</p>
+        <p>很遗憾您未中奖，感谢您的参与！</p>
       </div>
       <button
         class="thanksButton"
@@ -136,11 +136,6 @@ export default class Game extends Vue {
   //存储敲鼓的定时器
   setDrum: Array<any> = [];
 
-  @Watch("setDrum")
-  WatchDrum(newData: Array<any>) {
-    console.log(newData);
-  }
-
   get longzhouX(): number {
     return Number(this.longPosition) + this.screenWidth * 0.091;
   }
@@ -159,7 +154,6 @@ export default class Game extends Vue {
 
   mounted(): void {
     this.gameId = this.$route.query.id;
-    console.log(this.$route.query.id);
     this.screenWidth = window.innerWidth;
     this.screenHeight = window.innerHeight;
     this.longPosition = this.screenWidth * 0.34;
@@ -325,10 +319,9 @@ export default class Game extends Vue {
         } else {
           this.imgName = "gu1";
         }
-        this.moveLong("left");
+        this.moveLong("left", 25);
       }, 100);
       this.setDrum.push(setInte);
-      console.log(this.setDrum);
     } else if (e === 1) {
       this.swichDrum(e);
       const setInte = setInterval(() => {
@@ -337,7 +330,7 @@ export default class Game extends Vue {
         } else {
           this.imgName1 = "gu1";
         }
-        this.moveLong("right");
+        this.moveLong("right", 25);
       }, 100);
       this.setDrum.push(setInte);
     }
@@ -363,39 +356,13 @@ export default class Game extends Vue {
     }
   }
 
-  //长按左自动敲鼓
-  leftLong() {
-    this.setInterObejct = setInterval(() => {
-      if (this.imgName === "gu1") {
-        this.imgName = "gu2";
-      } else {
-        this.imgName = "gu1";
-      }
-      this.moveLong("left", 30);
-    }, 100);
-    this.longzSpeed = this.longSpeed;
-  }
   //长按结束敲鼓
   handleTouchEnd() {
-    console.log(this.setDrum);
-    console.log("结束");
     this.setDrum.forEach(e => {
       clearInterval(e);
     });
     this.setDrum = [];
     this.longzSpeed = this.speed;
-  }
-  //长按右点击敲鼓
-  rightLong() {
-    this.setInterObejct = setInterval(() => {
-      if (this.imgName1 === "gu1") {
-        this.imgName1 = "gu2";
-      } else {
-        this.imgName1 = "gu1";
-      }
-      this.moveLong("right", 30);
-    }, 100);
-    this.longzSpeed = this.longSpeed;
   }
   //移动龙舟
   moveLong(e: string, f?: number) {
@@ -512,6 +479,7 @@ export default class Game extends Vue {
       margin-left: 5vw;
       box-sizing: border-box;
       padding-top: 60vw;
+      white-space: nowrap;
       p {
         margin: 0;
         padding: 0;
